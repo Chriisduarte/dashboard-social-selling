@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Fora da Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a10;
+    --bg2: #11111c;
+    --bg3: #1a1a2a;
+    --card: #14141f;
+    --card-hover: #1a1a2a;
+    --border: #25253a;
+    --border-hot: #3a3a55;
+    --purple: #8b5cf6;
+    --purple-bright: #a78bfa;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+    --green: #10b981;
+    --yellow: #fbbf24;
+    --orange: #fb923c;
+    --red: #ef4444;
+    --text: #f5f4ff;
+    --text2: #b0acc8;
+    --text3: #6b6585;
+    --text4: #4a4660;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --grad: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+    --grad-dim: linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(236,72,153,0.15) 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(139,92,246,0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(236,72,153,0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+  .serif { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* TOPBAR */
+  .topbar {
+    background: rgba(17,17,28,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 38px; height: 38px;
+    background: var(--grad);
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Instrument Serif', serif; font-size: 22px; font-style: italic;
+    color: white;
+    box-shadow: 0 4px 24px rgba(139,92,246,0.35);
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand-sub { font-size: 11px; color: var(--text3); font-weight: 500; }
+  .topbar-meta { display: flex; align-items: center; gap: 16px; }
+  .sync-status {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 13px;
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 8px;
+    font-size: 12px; font-weight: 500;
+    color: var(--green);
+  }
+  .sync-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+  .sync-status.error { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); color: var(--red); }
+  .sync-status.error .sync-dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .sync-status.loading { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.25); color: var(--yellow); }
+  .sync-status.loading .sync-dot { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+  .reload-btn {
+    width: 34px; height: 34px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .reload-btn:hover { color: var(--purple-bright); border-color: var(--purple); transform: rotate(90deg); }
+
+  /* TABS */
+  .tabs {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex; overflow-x: auto; scrollbar-width: none;
+    padding: 0 24px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 16px 20px;
+    background: none; border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text3);
+    font-family: inherit;
+    font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
+    cursor: pointer; white-space: nowrap;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .tab:hover { color: var(--text2); }
+  .tab.active {
+    color: var(--purple-bright);
+    border-bottom-color: var(--purple);
+  }
+  .tab-icon { font-size: 14px; }
+
+  /* CONTROLS BAR */
+  .controls {
+    padding: 18px 28px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .ctrl-label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 4px; }
+  .ctrl-group { display: flex; gap: 6px; padding: 4px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; }
+  .ctrl-btn {
+    padding: 7px 13px;
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    font-family: inherit;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.15s;
+  }
+  .ctrl-btn:hover { color: var(--text); }
+  .ctrl-btn.active { background: var(--grad); color: white; box-shadow: 0 2px 12px rgba(139,92,246,0.3); }
+  .date-inputs { display: flex; align-items: center; gap: 8px; }
+  .date-inputs input {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 7px 11px;
+    border-radius: 7px; font-family: inherit; font-size: 12px;
+    color-scheme: dark;
+  }
+  .date-inputs input:focus { outline: none; border-color: var(--purple); }
+
+  /* PANELS */
+  .panel { display: none; padding: 28px; max-width: 1500px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* PAGE HEADER */
+  .page-head { margin-bottom: 28px; }
+  .page-head h1 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: 36px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+  .page-head h1 em {
+    font-style: italic;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .page-head p { color: var(--text3); font-size: 14px; }
+
+  /* GRID */
+  .grid { display: grid; gap: 16px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 1100px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .panel { padding: 18px; }
+    .page-head h1 { font-size: 28px; }
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border-hot); }
+  .card-title {
+    font-size: 11px; font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 7px;
+  }
+
+  /* KPI */
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--grad);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .kpi:hover::before { opacity: 1; }
+  .kpi-label {
+    font-size: 11px; font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .kpi-value {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .kpi-meta { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 8px; }
+  .kpi-delta { font-weight: 600; padding: 2px 7px; border-radius: 5px; font-size: 11px; }
+  .kpi-delta.up { color: var(--green); background: rgba(16,185,129,0.12); }
+  .kpi-delta.down { color: var(--red); background: rgba(239,68,68,0.12); }
+  .kpi-delta.neutral { color: var(--text3); background: rgba(107,101,133,0.12); }
+
+  /* PROGRESS */
+  .progress {
+    height: 8px;
+    background: var(--bg3);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 12px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--grad);
+    border-radius: 999px;
+    transition: width 0.6s ease;
+    box-shadow: 0 0 12px rgba(139,92,246,0.4);
+  }
+
+  /* CHART */
+  .chart-wrap { position: relative; height: 280px; }
+  .chart-wrap.tall { height: 340px; }
+  .chart-wrap.short { height: 200px; }
+
+  /* FUNIL */
+  .funnel { display: flex; flex-direction: column; gap: 6px; }
+  .funnel-step {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    position: relative;
+  }
+  .funnel-step .label { font-size: 13px; font-weight: 600; }
+  .funnel-step .value { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
+  .funnel-step .rate {
+    font-size: 11px; color: var(--text3);
+    margin-top: 2px; display: block;
+    font-weight: 500;
+  }
+  .funnel-bg {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--grad-dim);
+    border-radius: 10px;
+    z-index: 0;
+    transition: width 0.6s ease;
+  }
+  .funnel-step > * { position: relative; z-index: 1; }
+  .funnel-arrow { text-align: center; color: var(--text4); font-size: 11px; margin: -2px 0; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left;
+    padding: 11px 14px;
+    font-size: 11px; font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  tbody td:first-child { font-family: 'Inter Tight', sans-serif; font-weight: 500; }
+  tbody tr:hover { background: var(--card-hover); }
+  td.num { text-align: right; }
+  td.muted { color: var(--text3); }
+
+  /* BADGES & CHIPS */
+  .chip {
+    display: inline-block;
+    padding: 3px 9px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .chip.green { color: var(--green); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); }
+  .chip.red { color: var(--red); border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+  .chip.yellow { color: var(--yellow); border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.08); }
+  .chip.purple { color: var(--purple-bright); border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.08); }
+
+  /* PROJEÇÃO CARDS */
+  .scenario {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+  }
+  .scenario.optimistic { border-color: rgba(16,185,129,0.35); }
+  .scenario.realistic { border-color: rgba(139,92,246,0.35); }
+  .scenario.pessimistic { border-color: rgba(239,68,68,0.35); }
+  .scenario-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 3px 8px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+  }
+  .scenario.optimistic .scenario-tag { background: rgba(16,185,129,0.12); color: var(--green); }
+  .scenario.realistic .scenario-tag { background: rgba(139,92,246,0.12); color: var(--purple-bright); }
+  .scenario.pessimistic .scenario-tag { background: rgba(239,68,68,0.12); color: var(--red); }
+  .scenario-value {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .scenario-sub { font-size: 12px; color: var(--text3); margin-bottom: 14px; }
+  .scenario-detail { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; }
+  .scenario-detail span:first-child { color: var(--text3); }
+  .scenario-detail span:last-child { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  /* INSIGHT CARDS */
+  .insight {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--purple);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    display: flex; gap: 16px;
+    align-items: flex-start;
+  }
+  .insight.alert { border-left-color: var(--red); }
+  .insight.warn { border-left-color: var(--yellow); }
+  .insight.good { border-left-color: var(--green); }
+  .insight-icon { font-size: 22px; flex-shrink: 0; }
+  .insight h4 { font-size: 14px; margin-bottom: 4px; font-weight: 700; }
+  .insight p { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+  /* SETUP / EMPTY STATE */
+  .setup-screen {
+    max-width: 720px;
+    margin: 60px auto;
+    padding: 40px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .setup-screen h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+  .setup-screen p { color: var(--text2); margin-bottom: 24px; line-height: 1.6; font-size: 14px; }
+  .setup-step {
+    background: var(--bg3);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 14px;
+    border-left: 3px solid var(--purple);
+  }
+  .setup-step strong { display: block; margin-bottom: 6px; font-size: 13px; color: var(--purple-bright); }
+  .setup-step code {
+    display: block;
+    background: var(--bg);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-top: 8px;
+    word-break: break-all;
+    border: 1px solid var(--border);
+  }
+  .setup-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .setup-input:focus { outline: none; border-color: var(--purple); }
+  .setup-btn {
+    background: var(--grad);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .setup-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(139,92,246,0.3); }
+
+  /* LOADING */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,10,16,0.9);
+    display: none; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* HEATMAP */
+  .heatmap { display: grid; grid-template-columns: 60px repeat(6, 1fr); gap: 4px; font-size: 11px; }
+  .heat-cell {
+    aspect-ratio: 1.6/1;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .heat-label { display: flex; align-items: center; color: var(--text3); font-size: 10px; font-weight: 600; }
+
+  /* HIGHLIGHT TEXT */
+  .number-big {
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* HORIZONTAL RULE */
+  .hr-soft { height: 1px; background: var(--border); margin: 20px 0; border: 0; }
+
+  /* SECTION HEADER INSIDE PANEL */
+  .sec-h {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    margin: 28px 0 14px;
+    letter-spacing: -0.01em;
+  }
+  .sec-h:first-child { margin-top: 0; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 12px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    z-index: 999;
+    transform: translateY(120%);
+    transition: transform 0.3s;
+  }
+  .toast.show { transform: translateY(0); }
+  .toast.success { border-color: rgba(16,185,129,0.4); }
+  .toast.error { border-color: rgba(239,68,68,0.4); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">F</div>
+    <div class="brand-text">
+      <span class="brand-name">Fora da Caixa</span>
+      <span class="brand-sub">Dashboard Operacional</span>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <div class="sync-status loading" id="syncStatus">
+      <span class="sync-dot"></span>
+      <span id="syncText">Carregando…</span>
+    </div>
+    <button class="reload-btn" id="reloadBtn" title="Atualizar dados">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" data-tab="visao"><span class="tab-icon">◉</span> Visão Geral</button>
+  <button class="tab" data-tab="diario"><span class="tab-icon">◐</span> Diário</button>
+  <button class="tab" data-tab="trafego"><span class="tab-icon">◑</span> Tráfego e Reportei</button>
+  <button class="tab" data-tab="analises"><span class="tab-icon">◭</span> Análises</button>
+  <button class="tab" data-tab="projecoes"><span class="tab-icon">◬</span> Projeções</button>
+  <button class="tab" data-tab="config"><span class="tab-icon">⚙</span> Configuração</button>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls" id="controls">
+  <span class="ctrl-label">Mês</span>
+  <div class="ctrl-group" id="monthGroup">
+    <!-- preenchido via JS -->
+  </div>
+  <span class="ctrl-label" style="margin-left:12px;">Visão</span>
+  <div class="ctrl-group">
+    <button class="ctrl-btn active" data-view="month">Mês</button>
+    <button class="ctrl-btn" data-view="custom">Período</button>
+  </div>
+  <div class="date-inputs" id="customDates" style="display:none;">
+    <input type="date" id="dateFrom">
+    <span style="color:var(--text3); font-size:12px;">→</span>
+    <input type="date" id="dateTo">
+  </div>
+</div>
+
+<!-- ============ VISÃO GERAL ============ -->
+<div class="panel active" id="p-visao">
+  <div class="page-head">
+    <h1>Visão <em>Geral</em></h1>
+    <p id="visaoSubtitle">Resumo do mês corrente</p>
+  </div>
+
+  <!-- KPIs principais -->
+  <div class="grid grid-4" style="margin-bottom: 18px;">
+    <div class="kpi">
+      <div class="kpi-label">Faturamento Total</div>
+      <div class="kpi-value mono" id="kpi-fat">R$ —</div>
+      <div class="kpi-meta">
+        <span id="kpi-fat-delta" class="kpi-delta neutral">—</span>
+        <span id="kpi-fat-meta">vs mês anterior</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Clientes Fechados</div>
+      <div class="kpi-value mono" id="kpi-fech">—</div>
+      <div class="kpi-meta">
+        <span id="kpi-fech-delta" class="kpi-delta neutral">—</span>
+        <span>de fechamentos</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Investimento Tráfego</div>
+      <div class="kpi-value mono" id="kpi-inv">R$ —</div>
+      <div class="kpi-meta">
+        <span class="chip purple" id="kpi-cac">CAC R$ —</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Conversão Geral</div>
+      <div class="kpi-value mono" id="kpi-conv">—%</div>
+      <div class="kpi-meta">
+        <span id="kpi-conv-meta">conversas → fechamento</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Funil + Atividade -->
+  <div class="grid grid-2" style="margin-bottom: 18px;">
+    <div class="card">
+      <div class="card-title">⌖ Funil de Conversão</div>
+      <div class="funnel" id="funnel"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">↗ Atividade Diária</div>
+      <div class="chart-wrap">
+        <canvas id="chartActivity"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Faturamento + Mensagens -->
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">$ Faturamento Acumulado</div>
+      <div class="chart-wrap">
+        <canvas id="chartRevenue"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">≣ Mensagens por Tipo</div>
+      <div class="chart-wrap">
+        <canvas id="chartMessages"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DIÁRIO ============ -->
+<div class="panel" id="p-diario">
+  <div class="page-head">
+    <h1>Registro <em>Diário</em></h1>
+    <p>Tudo que é lançado na planilha</p>
+  </div>
+
+  <div class="card" style="margin-bottom: 18px;">
+    <div class="card-title">⊞ Histórico do Mês</div>
+    <div class="table-wrap">
+      <table id="tableDaily">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th class="num">Invest.</th>
+            <th class="num">Seg.</th>
+            <th class="num">Ativ.</th>
+            <th class="num">BV</th>
+            <th class="num">F-Up</th>
+            <th class="num">Reat.</th>
+            <th class="num">ADS</th>
+            <th class="num">Doc</th>
+            <th class="num">Ofertas</th>
+            <th class="num">Fech.</th>
+            <th class="num">Fat. Ment.</th>
+            <th class="num">Fat. Ag.</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyDaily"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TRÁFEGO E REPORTEI ============ -->
+<div class="panel" id="p-trafego">
+  <div class="page-head">
+    <h1>Tráfego e <em>Reportei</em></h1>
+    <p>Métricas semanais de Meta Ads, Instagram e Facebook</p>
+  </div>
+
+  <div class="grid grid-4" style="margin-bottom: 18px;">
+    <div class="kpi">
+      <div class="kpi-label">Investido (período)</div>
+      <div class="kpi-value mono" id="rep-invest">R$ —</div>
+      <div class="kpi-meta"><span id="rep-invest-meta">—</span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Impressões</div>
+      <div class="kpi-value mono" id="rep-impr">—</div>
+      <div class="kpi-meta"><span id="rep-impr-meta">—</span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Novos Seguidores</div>
+      <div class="kpi-value mono" id="rep-seg">—</div>
+      <div class="kpi-meta"><span class="chip purple" id="rep-cps">CPS R$ —</span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Oportunidades</div>
+      <div class="kpi-value mono" id="rep-opp">—</div>
+      <div class="kpi-meta"><span>cadastros formulário</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 18px;">
+    <div class="card-title">⌬ Histórico Semanal</div>
+    <div class="table-wrap">
+      <table id="tableReportei">
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Período</th>
+            <th class="num">Invest.</th>
+            <th class="num">Impressões</th>
+            <th class="num">Anúncios</th>
+            <th class="num">Campanhas</th>
+            <th class="num">Seg. Novos</th>
+            <th class="num">CPS</th>
+            <th class="num">Oport.</th>
+            <th class="num">Alc. FB</th>
+            <th class="num">Engaj. FB</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyReportei">
+          <tr><td colspan="11" class="muted" style="text-align:center; padding: 28px;">Aba "Reportei" ainda não foi configurada na planilha. Veja a aba Configuração.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">↗ Investimento × Seguidores</div>
+      <div class="chart-wrap">
+        <canvas id="chartInvest"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">≈ Custo por Seguidor (tendência)</div>
+      <div class="chart-wrap">
+        <canvas id="chartCPS"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ANÁLISES ============ -->
+<div class="panel" id="p-analises">
+  <div class="page-head">
+    <h1>Análises <em>e correlações</em></h1>
+    <p>Onde tá vazando, onde tá funcionando</p>
+  </div>
+
+  <div class="grid grid-3" style="margin-bottom: 18px;">
+    <div class="kpi">
+      <div class="kpi-label">CAC Real</div>
+      <div class="kpi-value mono" id="an-cac">R$ —</div>
+      <div class="kpi-meta">por cliente fechado</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Ticket Médio</div>
+      <div class="kpi-value mono" id="an-ticket">R$ —</div>
+      <div class="kpi-meta">faturamento ÷ fechados</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">ROAS</div>
+      <div class="kpi-value mono" id="an-roas">—</div>
+      <div class="kpi-meta">retorno × investido</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 18px;">
+    <div class="card-title">▦ Heatmap — Ativação por Dia da Semana</div>
+    <div class="heatmap" id="heatmap"></div>
+    <p style="font-size: 11px; color: var(--text3); margin-top: 12px;">Quanto mais escuro, mais ativação foi feita naquele dia ao longo dos meses.</p>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom: 18px;">
+    <div class="card">
+      <div class="card-title">⊥ Comparativo Mensal</div>
+      <div class="table-wrap">
+        <table id="tableMonths">
+          <thead>
+            <tr>
+              <th>Mês</th>
+              <th class="num">Invest.</th>
+              <th class="num">Conversas</th>
+              <th class="num">Ofertas</th>
+              <th class="num">Fech.</th>
+              <th class="num">Fat. Total</th>
+              <th class="num">Conv.</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyMonths"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">∝ Taxas de Conversão por Etapa</div>
+      <div class="chart-wrap">
+        <canvas id="chartRates"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">◈ Insights Automáticos</div>
+    <div id="insightList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+  </div>
+</div>
+
+<!-- ============ PROJEÇÕES ============ -->
+<div class="panel" id="p-projecoes">
+  <div class="page-head">
+    <h1>Projeções <em>do mês</em></h1>
+    <p>Baseadas no ritmo atual e no histórico das últimas semanas</p>
+  </div>
+
+  <div class="card" style="margin-bottom: 18px;">
+    <div class="card-title">⊿ Onde você está agora</div>
+    <div class="grid grid-3" style="gap: 14px;">
+      <div>
+        <div class="kpi-label">Faturamento Real</div>
+        <div class="number-big mono" id="proj-real">R$ —</div>
+      </div>
+      <div>
+        <div class="kpi-label">Dias Decorridos</div>
+        <div class="number-big mono" id="proj-dias">—</div>
+      </div>
+      <div>
+        <div class="kpi-label">Ritmo Diário</div>
+        <div class="number-big mono" id="proj-ritmo">R$ —</div>
+      </div>
+    </div>
+    <div class="hr-soft"></div>
+    <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 200px;">
+        <div style="font-size: 12px; color: var(--text3); margin-bottom: 6px;">Meta do mês</div>
+        <input type="number" id="metaMes" value="23000" style="background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 14px; width: 160px;">
+        <div style="font-size: 11px; color: var(--text3); margin-top: 6px;">Edite para recalcular projeções</div>
+      </div>
+      <div class="progress" style="flex: 2; min-width: 250px; height: 14px;">
+        <div class="progress-fill" id="metaBar" style="width: 0%;"></div>
+      </div>
+      <div id="metaText" class="mono" style="font-weight: 700; min-width: 80px;">0%</div>
+    </div>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="scenario pessimistic">
+      <span class="scenario-tag">Pessimista</span>
+      <div class="scenario-value mono" id="scn-pess-val">R$ —</div>
+      <div class="scenario-sub">se o ritmo cair 20%</div>
+      <div class="scenario-detail"><span>Fechados projetados</span><span id="scn-pess-fech">—</span></div>
+      <div class="scenario-detail"><span>Gap vs meta</span><span id="scn-pess-gap">—</span></div>
+    </div>
+    <div class="scenario realistic">
+      <span class="scenario-tag">Realista</span>
+      <div class="scenario-value mono" id="scn-real-val">R$ —</div>
+      <div class="scenario-sub">mantendo o ritmo atual</div>
+      <div class="scenario-detail"><span>Fechados projetados</span><span id="scn-real-fech">—</span></div>
+      <div class="scenario-detail"><span>Gap vs meta</span><span id="scn-real-gap">—</span></div>
+    </div>
+    <div class="scenario optimistic">
+      <span class="scenario-tag">Otimista</span>
+      <div class="scenario-value mono" id="scn-otim-val">R$ —</div>
+      <div class="scenario-sub">se o ritmo subir 20%</div>
+      <div class="scenario-detail"><span>Fechados projetados</span><span id="scn-otim-fech">—</span></div>
+      <div class="scenario-detail"><span>Gap vs meta</span><span id="scn-otim-gap">—</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 18px;">
+    <div class="card-title">≈ Trajetória Faturamento (real × projeção)</div>
+    <div class="chart-wrap tall">
+      <canvas id="chartProjection"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIG ============ -->
+<div class="panel" id="p-config">
+  <div class="page-head">
+    <h1>Configuração <em>e setup</em></h1>
+    <p>Como conectar a planilha e expandir o sistema</p>
+  </div>
+
+  <div class="setup-screen" style="margin: 0 0 18px;">
+    <h2>Conexão com Google Sheets</h2>
+    <p>O dashboard lê direto da sua planilha. Pra isso, ela precisa estar pública (qualquer pessoa com o link pode ver) e o ID precisa estar configurado abaixo.</p>
+
+    <div class="setup-step">
+      <strong>1. Tornar a planilha pública</strong>
+      Abra a planilha → Compartilhar → "Qualquer pessoa com o link" → Visualizador. Sem isso, o dashboard não consegue ler.
+    </div>
+
+    <div class="setup-step">
+      <strong>2. ID da planilha</strong>
+      <input class="setup-input" type="text" id="sheetIdInput" placeholder="Cole o ID da planilha aqui">
+      <small style="color: var(--text3); font-size: 12px;">É a parte longa entre /d/ e /edit na URL da planilha.</small>
+    </div>
+
+    <div class="setup-step">
+      <strong>3. (Opcional) ID da aba Reportei Semanal</strong>
+      <input class="setup-input" type="text" id="reporteiGidInput" placeholder="GID da aba Reportei (ex: 123456789)">
+      <small style="color: var(--text3); font-size: 12px;">É o número que aparece em #gid= na URL quando você clica na aba.</small>
+    </div>
+
+    <button class="setup-btn" id="saveConfigBtn">Salvar e recarregar</button>
+  </div>
+
+  <div class="card" style="margin-bottom: 18px;">
+    <div class="card-title">▤ Estrutura esperada da aba "Diário"</div>
+    <p style="color: var(--text2); font-size: 13px; margin-bottom: 14px;">A planilha já tem essa estrutura. As abas precisam se chamar exatamente assim:</p>
+    <div class="mono" style="font-size: 12px; background: var(--bg3); padding: 12px; border-radius: 8px; line-height: 1.8;">
+      Diário - Jan 26 · Diário - Fev 26 · Diário - Mar 26 · Diário - Abr 26<br>
+      Diário - Mai 26 · Diário - Jun 26 · Diário - Jul 26 · Diário - Ago 26<br>
+      Diário - Set 26 · Diário - Out 26 · Diário - Nov 26 · Diário - Dez 26
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 18px;">
+    <div class="card-title">▤ Aba "Reportei Semanal" (criar nova)</div>
+    <p style="color: var(--text2); font-size: 13px; margin-bottom: 14px;">Crie uma aba nova com esse nome exato e essas colunas, na ordem:</p>
+    <div class="mono" style="font-size: 12px; background: var(--bg3); padding: 12px; border-radius: 8px; line-height: 1.8;">
+      Semana · Período · Investimento · Impressões · Anúncios ·<br>
+      Campanhas · Seguidores Novos · Custo por Seguidor · Oportunidades ·<br>
+      Alcance Facebook · Engajamento Facebook
+    </div>
+    <p style="color: var(--text3); font-size: 12px; margin-top: 12px;">Toda segunda, abra o Reportei (exporte em Excel agora que você descobriu), copie esses 9 números da semana anterior e cole numa linha nova.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">↻ Caching</div>
+    <p style="color: var(--text2); font-size: 13px;">O dashboard armazena os dados em memória ao carregar. Pra atualizar, clique no ícone de recarregar no topo. Se trocar a planilha, salve a config novamente.</p>
+  </div>
+</div>
+
+<!-- LOADING & TOAST -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// ESTADO
+// ============================================================
+const STATE = {
+  sheetId: null,
+  reporteiGid: null,
+  rawDaily: {},      // { 'jan': [linhas], 'fev': [linhas], ... }
+  rawReportei: [],
+  currentMonth: null,
+  customRange: null,
+  view: 'month',
+  charts: {},
+  metaMes: 23000
+};
+
+const MONTHS = [
+  { key: 'jan', label: 'Jan', name: 'Janeiro', tab: 'Diário - Jan 26', num: 0 },
+  { key: 'fev', label: 'Fev', name: 'Fevereiro', tab: 'Diário - Fev 26', num: 1 },
+  { key: 'mar', label: 'Mar', name: 'Março', tab: 'Diário - Mar 26', num: 2 },
+  { key: 'abr', label: 'Abr', name: 'Abril', tab: 'Diário - Abr 26', num: 3 },
+  { key: 'mai', label: 'Mai', name: 'Maio', tab: 'Diário - Mai 26', num: 4 },
+  { key: 'jun', label: 'Jun', name: 'Junho', tab: 'Diário - Jun 26', num: 5 },
+  { key: 'jul', label: 'Jul', name: 'Julho', tab: 'Diário - Jul 26', num: 6 },
+  { key: 'ago', label: 'Ago', name: 'Agosto', tab: 'Diário - Ago 26', num: 7 },
+  { key: 'set', label: 'Set', name: 'Setembro', tab: 'Diário - Set 26', num: 8 },
+  { key: 'out', label: 'Out', name: 'Outubro', tab: 'Diário - Out 26', num: 9 },
+  { key: 'nov', label: 'Nov', name: 'Novembro', tab: 'Diário - Nov 26', num: 10 },
+  { key: 'dez', label: 'Dez', name: 'Dezembro', tab: 'Diário - Dez 26', num: 11 }
+];
+
+const COLORS = {
+  purple: '#a78bfa',
+  pink: '#ec4899',
+  cyan: '#06b6d4',
+  green: '#10b981',
+  yellow: '#fbbf24',
+  orange: '#fb923c',
+  red: '#ef4444',
+  text2: '#b0acc8',
+  text3: '#6b6585',
+  border: '#25253a'
+};
+
+// ============================================================
+// UTIL
+// ============================================================
+const $ = id => document.getElementById(id);
+const fmt$ = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt$short = v => v >= 1000 ? 'R$ ' + (v/1000).toFixed(1) + 'k' : 'R$ ' + (v || 0).toFixed(0);
+const fmtN = v => (v || 0).toLocaleString('pt-BR');
+const fmt$num = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = v => (isFinite(v) ? v.toFixed(1) : '0') + '%';
+const sum = (arr, key) => arr.reduce((s, x) => s + (parseFloat(x[key]) || 0), 0);
+
+function toast(msg, type = 'success') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function setSync(state, text) {
+  const s = $('syncStatus');
+  s.className = 'sync-status ' + state;
+  $('syncText').textContent = text;
+}
+
+function parseMoney(str) {
+  if (!str) return 0;
+  if (typeof str === 'number') return str;
+  // Formato BR: "R$ 4.000,00" ou "R$ 79,87" → ponto = milhar, vírgula = decimal
+  let s = String(str).replace(/[^0-9,.-]/g, '');
+  // Se tem vírgula, ela é o decimal: remove pontos (milhar) e troca vírgula por ponto
+  if (s.indexOf(',') > -1) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  }
+  // Se não tem vírgula mas tem ponto, ponto pode ser decimal (ex: 79.87) — deixa
+  return parseFloat(s) || 0;
+}
+
+function parseInt2(str) {
+  if (!str) return 0;
+  if (typeof str === 'number') return str;
+  return parseInt(String(str).replace(/[^0-9-]/g, '')) || 0;
+}
+
+// ============================================================
+// CSV PARSER (simples — assume planilha do Google Sheets)
+// ============================================================
+function parseCSV(text) {
+  const lines = [];
+  let row = [], cell = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
+      else if (c === '"') inQuotes = false;
+      else cell += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n') { row.push(cell); lines.push(row); row = []; cell = ''; }
+      else if (c === '\r') {}
+      else cell += c;
+    }
+  }
+  if (cell || row.length) { row.push(cell); lines.push(row); }
+  return lines;
+}
+
+// ============================================================
+// LOAD DATA
+// ============================================================
+async function loadSheetData() {
+  if (!STATE.sheetId) {
+    setSync('error', 'Planilha não configurada');
+    return false;
+  }
+  setSync('loading', 'Carregando…');
+  $('loadingOverlay').classList.add('show');
+
+  try {
+    // Carrega cada aba via export CSV (usa nome da aba codificado)
+    const promises = MONTHS.map(m => loadTab(m.tab).then(data => ({ key: m.key, data })));
+    const results = await Promise.all(promises);
+    results.forEach(r => { STATE.rawDaily[r.key] = r.data; });
+
+    // Carrega aba Reportei se gid configurado
+    if (STATE.reporteiGid) {
+      try {
+        STATE.rawReportei = await loadTabByGid(STATE.reporteiGid);
+      } catch(e) { console.warn('Reportei não carregou:', e); }
+    }
+
+    setSync('', 'Sincronizado');
+    $('syncStatus').className = 'sync-status';
+    $('syncStatus').style.background = 'rgba(16,185,129,0.08)';
+    $('syncStatus').style.borderColor = 'rgba(16,185,129,0.25)';
+    $('syncStatus').style.color = COLORS.green;
+    return true;
+  } catch (e) {
+    console.error(e);
+    setSync('error', 'Erro ao carregar');
+    toast('Falha ao ler a planilha. Verifique se ela está pública.', 'error');
+    return false;
+  } finally {
+    $('loadingOverlay').classList.remove('show');
+  }
+}
+
+async function loadTab(tabName) {
+  // Tenta via gviz (mais confiável que export?format=csv com nome de aba)
+  const url = `https://docs.google.com/spreadsheets/d/${STATE.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const text = await resp.text();
+  const rows = parseCSV(text);
+  return parseDailyRows(rows);
+}
+
+async function loadTabByGid(gid) {
+  const url = `https://docs.google.com/spreadsheets/d/${STATE.sheetId}/export?format=csv&gid=${gid}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const text = await resp.text();
+  return parseCSV(text);
+}
+
+// Mapeia linhas da aba "Diário - Mês" pro formato interno
+// O gviz junta título+legenda+header em uma linha. Por isso, em vez de procurar
+// header "Data", procuramos a primeira linha que comece com data (DD/MM).
+function parseDailyRows(rows) {
+  if (!rows || rows.length < 1) return [];
+  const result = [];
+  for (const row of rows) {
+    if (!row[0]) continue;
+    const dateStr = String(row[0]).trim();
+    if (String(dateStr).startsWith('TOTAL') || String(dateStr).startsWith('Custo por')) break;
+    if (!/^\d{2}\/\d{2}/.test(dateStr)) continue;
+    result.push({
+      data: dateStr,
+      invest: parseMoney(row[1]),
+      seguidores: parseInt2(row[2]),
+      custoSeg: parseMoney(row[3]),
+      ativacao: parseInt2(row[4]),
+      bv: parseInt2(row[5]),
+      followup: parseInt2(row[6]),
+      reativ: parseInt2(row[7]),
+      ads: parseInt2(row[8]),
+      doc: parseInt2(row[9]),
+      ofertas: parseInt2(row[10]),
+      fechados: parseInt2(row[11]),
+      fatMent: parseMoney(row[12]),
+      fatAg: parseMoney(row[13]),
+      fatTotal: parseMoney(row[12]) + parseMoney(row[13]),
+      conversas: parseInt2(row[4]) + parseInt2(row[5]) + parseInt2(row[6]) + parseInt2(row[7])
+    });
+  }
+  return result;
+}
+
+// ============================================================
+// FILTRO E AGREGAÇÃO
+// ============================================================
+function getFilteredRows() {
+  if (STATE.view === 'month' && STATE.currentMonth) {
+    return STATE.rawDaily[STATE.currentMonth] || [];
+  }
+  if (STATE.view === 'custom' && STATE.customRange) {
+    const all = [];
+    MONTHS.forEach((m, idx) => {
+      (STATE.rawDaily[m.key] || []).forEach(row => {
+        const [dd, mm] = row.data.split('/');
+        const date = new Date(2026, idx, parseInt(dd));
+        if (date >= STATE.customRange.from && date <= STATE.customRange.to) {
+          all.push({ ...row, _date: date });
+        }
+      });
+    });
+    return all;
+  }
+  return [];
+}
+
+function aggregate(rows) {
+  const ativacao = sum(rows, 'ativacao');
+  const bv = sum(rows, 'bv');
+  const followup = sum(rows, 'followup');
+  const reativ = sum(rows, 'reativ');
+  return {
+    invest: sum(rows, 'invest'),
+    seguidores: sum(rows, 'seguidores'),
+    ativacao, bv, followup, reativ,
+    conversas: ativacao + bv + followup + reativ,
+    ads: sum(rows, 'ads'),
+    doc: sum(rows, 'doc'),
+    ofertas: sum(rows, 'ofertas'),
+    fechados: sum(rows, 'fechados'),
+    fatMent: sum(rows, 'fatMent'),
+    fatAg: sum(rows, 'fatAg'),
+    fatTotal: sum(rows, 'fatTotal')
+  };
+}
+
+// ============================================================
+// RENDER — VISÃO GERAL
+// ============================================================
+function renderVisao() {
+  const rows = getFilteredRows();
+  const agg = aggregate(rows);
+
+  // KPIs
+  $('kpi-fat').textContent = fmt$short(agg.fatTotal);
+  $('kpi-fech').textContent = agg.fechados;
+  $('kpi-inv').textContent = fmt$short(agg.invest);
+  const conv = agg.conversas > 0 ? (agg.fechados / agg.conversas * 100) : 0;
+  $('kpi-conv').textContent = pct(conv);
+  $('kpi-cac').textContent = 'CAC ' + (agg.fechados > 0 ? fmt$short(agg.invest / agg.fechados) : 'R$ 0');
+
+  // Comparação com mês anterior
+  if (STATE.view === 'month') {
+    const idx = MONTHS.findIndex(m => m.key === STATE.currentMonth);
+    if (idx > 0) {
+      const prevAgg = aggregate(STATE.rawDaily[MONTHS[idx-1].key] || []);
+      renderDelta('kpi-fat-delta', agg.fatTotal, prevAgg.fatTotal);
+      renderDelta('kpi-fech-delta', agg.fechados, prevAgg.fechados);
+    }
+  }
+
+  // Subtítulo
+  if (STATE.view === 'month') {
+    const m = MONTHS.find(x => x.key === STATE.currentMonth);
+    $('visaoSubtitle').textContent = `Resumo de ${m.name} 2026`;
+  } else if (STATE.customRange) {
+    $('visaoSubtitle').textContent = `Período personalizado: ${STATE.customRange.from.toLocaleDateString('pt-BR')} a ${STATE.customRange.to.toLocaleDateString('pt-BR')}`;
+  }
+
+  renderFunnel(agg);
+  renderActivityChart(rows);
+  renderRevenueChart(rows);
+  renderMessagesChart(agg);
+}
+
+function renderDelta(id, cur, prev) {
+  const el = $(id);
+  if (!prev) { el.className = 'kpi-delta neutral'; el.textContent = '—'; return; }
+  const delta = ((cur - prev) / prev) * 100;
+  const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '—';
+  el.className = 'kpi-delta ' + (delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral');
+  el.textContent = `${arrow} ${Math.abs(delta).toFixed(1)}%`;
+}
+
+function renderFunnel(agg) {
+  const conversas = agg.ativacao + agg.bv + agg.followup + agg.reativ;
+  const steps = [
+    { label: 'Seguidores Novos', value: agg.seguidores, color: COLORS.cyan },
+    { label: 'Conversas', value: conversas, color: COLORS.purple, sub: `Ativ. ${fmtN(agg.ativacao)} · BV ${fmtN(agg.bv)} · F-Up ${fmtN(agg.followup)} · Reat. ${fmtN(agg.reativ)}` },
+    { label: 'Docs Enviados', value: agg.doc, color: COLORS.pink },
+    { label: 'Ofertas Enviadas', value: agg.ofertas, color: COLORS.yellow },
+    { label: 'Clientes Fechados', value: agg.fechados, color: COLORS.green }
+  ];
+  const max = Math.max(...steps.map(s => s.value), 1);
+  let html = '';
+  steps.forEach((s, i) => {
+    const w = (s.value / max) * 100;
+    const rate = i > 0 && steps[i-1].value > 0
+      ? `${pct(s.value / steps[i-1].value * 100)} de ${steps[i-1].label.toLowerCase()}`
+      : '';
+    const subline = s.sub ? `<span class="rate" style="display:block; margin-top:2px;">${s.sub}</span>` : '';
+    html += `
+      <div class="funnel-step">
+        <div class="funnel-bg" style="width: ${w}%;"></div>
+        <div>
+          <div class="label">${s.label}</div>
+          ${rate ? `<span class="rate">${rate}</span>` : ''}
+          ${subline}
+        </div>
+        <div class="value mono">${fmtN(s.value)}</div>
+      </div>
+    `;
+    if (i < steps.length - 1) html += '<div class="funnel-arrow">↓</div>';
+  });
+  $('funnel').innerHTML = html;
+}
+
+function renderActivityChart(rows) {
+  destroyChart('chartActivity');
+  const labels = rows.map(r => r.data.substring(0, 5));
+  STATE.charts.chartActivity = new Chart($('chartActivity'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Ativação', data: rows.map(r => r.ativacao), borderColor: COLORS.purple, backgroundColor: 'transparent', tension: 0.35, pointRadius: 2, borderWidth: 2 },
+        { label: 'Ofertas', data: rows.map(r => r.ofertas), borderColor: COLORS.yellow, backgroundColor: 'transparent', tension: 0.35, pointRadius: 2, borderWidth: 2 },
+        { label: 'Fechados', data: rows.map(r => r.fechados), borderColor: COLORS.green, backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.35, pointRadius: 3, borderWidth: 2 }
+      ]
+    },
+    options: chartOpts()
+  });
+}
+
+function renderRevenueChart(rows) {
+  destroyChart('chartRevenue');
+  let acc = 0;
+  const data = rows.map(r => { acc += r.fatTotal; return acc; });
+  STATE.charts.chartRevenue = new Chart($('chartRevenue'), {
+    type: 'line',
+    data: {
+      labels: rows.map(r => r.data.substring(0, 5)),
+      datasets: [{
+        label: 'Faturamento Acumulado',
+        data,
+        borderColor: COLORS.pink,
+        backgroundColor: 'rgba(236,72,153,0.15)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 2.5,
+        pointRadius: 0
+      }]
+    },
+    options: chartOpts({ formatY: fmt$short })
+  });
+}
+
+function renderMessagesChart(agg) {
+  destroyChart('chartMessages');
+  STATE.charts.chartMessages = new Chart($('chartMessages'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Ativação', 'Boas-Vindas', 'Follow-Up', 'Reativação'],
+      datasets: [{
+        data: [agg.ativacao, agg.bv, agg.followup, agg.reativ],
+        backgroundColor: [COLORS.purple, COLORS.pink, COLORS.cyan, COLORS.yellow],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: COLORS.text2, font: { family: 'Inter Tight', size: 12 }, padding: 14, boxWidth: 10 } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// RENDER — DIÁRIO
+// ============================================================
+function renderDiario() {
+  const rows = getFilteredRows();
+  const tbody = $('tbodyDaily');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="13" class="muted" style="text-align:center; padding: 28px;">Sem dados pra esse período.</td></tr>'; return; }
+  let html = '';
+  rows.forEach(r => {
+    if (!r.invest && !r.ativacao && !r.bv && !r.fatTotal && !r.fechados) return; // pula linhas vazias
+    html += `<tr>
+      <td>${r.data}</td>
+      <td class="num">${r.invest ? fmt$short(r.invest) : '—'}</td>
+      <td class="num">${r.seguidores || '—'}</td>
+      <td class="num">${r.ativacao || '—'}</td>
+      <td class="num">${r.bv || '—'}</td>
+      <td class="num">${r.followup || '—'}</td>
+      <td class="num">${r.reativ || '—'}</td>
+      <td class="num">${r.ads || '—'}</td>
+      <td class="num">${r.doc || '—'}</td>
+      <td class="num">${r.ofertas || '—'}</td>
+      <td class="num">${r.fechados || '—'}</td>
+      <td class="num">${r.fatMent ? fmt$short(r.fatMent) : '—'}</td>
+      <td class="num">${r.fatAg ? fmt$short(r.fatAg) : '—'}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html || '<tr><td colspan="13" class="muted" style="text-align:center; padding: 28px;">Sem registros lançados ainda.</td></tr>';
+}
+
+// ============================================================
+// RENDER — TRÁFEGO
+// ============================================================
+function renderTrafego() {
+  // Sempre soma o que tem na aba Diário (invest, seguidores) como fallback
+  const rows = getFilteredRows();
+  const agg = aggregate(rows);
+  $('rep-invest').textContent = fmt$short(agg.invest);
+  $('rep-seg').textContent = fmtN(agg.seguidores);
+  $('rep-cps').textContent = 'CPS ' + (agg.seguidores > 0 ? fmt$num(agg.invest / agg.seguidores) : 'R$ —');
+  $('rep-impr').textContent = '—';
+  $('rep-opp').textContent = '—';
+
+  // Charts de tráfego
+  renderInvestChart(rows);
+  renderCPSChart();
+}
+
+function renderInvestChart(rows) {
+  destroyChart('chartInvest');
+  STATE.charts.chartInvest = new Chart($('chartInvest'), {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r.data.substring(0, 5)),
+      datasets: [
+        { label: 'Investimento', data: rows.map(r => r.invest), backgroundColor: 'rgba(139,92,246,0.5)', borderColor: COLORS.purple, borderWidth: 1, yAxisID: 'y' },
+        { label: 'Seguidores Novos', data: rows.map(r => r.seguidores), type: 'line', borderColor: COLORS.cyan, backgroundColor: 'transparent', tension: 0.35, pointRadius: 3, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      ...chartOpts(),
+      scales: {
+        x: { ticks: { color: COLORS.text3 }, grid: { color: COLORS.border } },
+        y: { position: 'left', ticks: { color: COLORS.text3, callback: fmt$short }, grid: { color: COLORS.border } },
+        y1: { position: 'right', ticks: { color: COLORS.text3 }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderCPSChart() {
+  destroyChart('chartCPS');
+  // Tendência mensal
+  const labels = [], data = [];
+  MONTHS.forEach(m => {
+    const agg = aggregate(STATE.rawDaily[m.key] || []);
+    if (agg.seguidores > 0) {
+      labels.push(m.label);
+      data.push(agg.invest / agg.seguidores);
+    }
+  });
+  STATE.charts.chartCPS = new Chart($('chartCPS'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Custo por Seguidor',
+        data,
+        borderColor: COLORS.yellow,
+        backgroundColor: 'rgba(251,191,36,0.15)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 4,
+        borderWidth: 2.5
+      }]
+    },
+    options: chartOpts({ formatY: v => 'R$ ' + v.toFixed(2) })
+  });
+}
+
+// ============================================================
+// RENDER — ANÁLISES
+// ============================================================
+function renderAnalises() {
+  const rows = getFilteredRows();
+  const agg = aggregate(rows);
+  $('an-cac').textContent = agg.fechados > 0 ? fmt$short(agg.invest / agg.fechados) : 'R$ —';
+  $('an-ticket').textContent = agg.fechados > 0 ? fmt$short(agg.fatTotal / agg.fechados) : 'R$ —';
+  $('an-roas').textContent = agg.invest > 0 ? (agg.fatTotal / agg.invest).toFixed(2) + 'x' : '—';
+
+  renderHeatmap();
+  renderMonthsTable();
+  renderRatesChart();
+  renderInsights(agg, rows);
+}
+
+function renderHeatmap() {
+  // Soma ativação por dia da semana (todos meses agregados)
+  const dayTotals = [0, 0, 0, 0, 0, 0, 0]; // Dom..Sáb
+  const dayCount = [0, 0, 0, 0, 0, 0, 0];
+  MONTHS.forEach((m, midx) => {
+    (STATE.rawDaily[m.key] || []).forEach(row => {
+      const [dd] = row.data.split('/');
+      const date = new Date(2026, midx, parseInt(dd));
+      const dow = date.getDay();
+      dayTotals[dow] += row.ativacao;
+      if (row.ativacao > 0) dayCount[dow]++;
+    });
+  });
+  const max = Math.max(...dayTotals, 1);
+  const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const dowMap = [1, 2, 3, 4, 5, 6]; // pula domingo
+  let html = '<div class="heat-label">Ativação</div>';
+  dowMap.forEach((dow, i) => {
+    const v = dayTotals[dow];
+    const intensity = v / max;
+    const r = Math.round(139 + (255 - 139) * 0);
+    const g = Math.round(92 + (200 - 92) * 0);
+    const b = Math.round(246 + (255 - 246) * 0);
+    const opacity = 0.15 + intensity * 0.75;
+    html += `<div class="heat-cell" style="background: rgba(139,92,246,${opacity}); border-color: rgba(139,92,246,${0.3 + intensity*0.4});">${v ? fmtN(v) : '—'}</div>`;
+  });
+  html += '<div class="heat-label">Dias</div>';
+  dowMap.forEach((dow, i) => {
+    html += `<div class="heat-label" style="justify-content: center;">${days[i]}</div>`;
+  });
+  $('heatmap').innerHTML = html;
+}
+
+function renderMonthsTable() {
+  let html = '';
+  MONTHS.forEach(m => {
+    const agg = aggregate(STATE.rawDaily[m.key] || []);
+    if (!agg.invest && !agg.conversas && !agg.fatTotal) return;
+    const conv = agg.conversas > 0 ? (agg.fechados / agg.conversas * 100) : 0;
+    html += `<tr>
+      <td>${m.name}</td>
+      <td class="num">${fmt$short(agg.invest)}</td>
+      <td class="num">${fmtN(agg.conversas)}</td>
+      <td class="num">${fmtN(agg.ofertas)}</td>
+      <td class="num">${fmtN(agg.fechados)}</td>
+      <td class="num">${fmt$short(agg.fatTotal)}</td>
+      <td class="num"><span class="chip ${conv > 1 ? 'green' : conv > 0.5 ? 'yellow' : 'red'}">${pct(conv)}</span></td>
+    </tr>`;
+  });
+  $('tbodyMonths').innerHTML = html || '<tr><td colspan="7" class="muted" style="text-align:center; padding: 28px;">Sem dados ainda.</td></tr>';
+}
+
+function renderRatesChart() {
+  destroyChart('chartRates');
+  const labels = [], rates = [];
+  MONTHS.forEach(m => {
+    const agg = aggregate(STATE.rawDaily[m.key] || []);
+    if (agg.conversas > 0) {
+      labels.push(m.label);
+      rates.push({
+        convOferta: agg.ofertas / agg.conversas * 100,
+        ofertaFech: agg.ofertas > 0 ? agg.fechados / agg.ofertas * 100 : 0
+      });
+    }
+  });
+  STATE.charts.chartRates = new Chart($('chartRates'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Conversa → Oferta (%)', data: rates.map(r => r.convOferta), borderColor: COLORS.cyan, backgroundColor: 'transparent', tension: 0.35, pointRadius: 4, borderWidth: 2.5 },
+        { label: 'Oferta → Fechamento (%)', data: rates.map(r => r.ofertaFech), borderColor: COLORS.green, backgroundColor: 'transparent', tension: 0.35, pointRadius: 4, borderWidth: 2.5 }
+      ]
+    },
+    options: chartOpts({ formatY: v => v.toFixed(1) + '%' })
+  });
+}
+
+function renderInsights(agg, rows) {
+  const insights = [];
+
+  // Conversão geral (conversas -> fechamento)
+  const conv = agg.conversas > 0 ? (agg.fechados / agg.conversas * 100) : 0;
+  if (conv < 0.8 && agg.conversas > 100) {
+    insights.push({
+      type: 'alert',
+      icon: '⚠',
+      title: 'Conversão crítica',
+      text: `Sua conversão conversas→fechamento está em ${pct(conv)}. Pra cada 100 conversas, menos de 1 fecha. O problema não é topo de funil, é meio. Investigue onde os leads param de responder.`
+    });
+  } else if (conv > 2) {
+    insights.push({
+      type: 'good',
+      icon: '◉',
+      title: 'Conversão saudável',
+      text: `Conversão de ${pct(conv)} está boa. Foco agora é volume — cada nova conversa tem alta chance de virar receita.`
+    });
+  }
+
+  // Conversas vs ofertas
+  if (agg.conversas > 200 && agg.ofertas / agg.conversas < 0.05) {
+    insights.push({
+      type: 'warn',
+      icon: '◎',
+      title: 'Gap entre conversa e oferta',
+      text: `${fmtN(agg.conversas)} conversas geraram só ${agg.ofertas} ofertas (${pct(agg.ofertas/agg.conversas*100)}). Há um vazamento entre boas-vindas e qualificação. Pode estar travando no SPMC.`
+    });
+  }
+
+  // ROAS
+  const roas = agg.invest > 0 ? agg.fatTotal / agg.invest : 0;
+  if (roas > 3) {
+    insights.push({
+      type: 'good',
+      icon: '↑',
+      title: 'ROAS alto',
+      text: `Cada R$ 1 investido virou R$ ${roas.toFixed(2)}. Considere escalar investimento mantendo a mesma estratégia.`
+    });
+  } else if (roas < 1 && agg.invest > 1000) {
+    insights.push({
+      type: 'alert',
+      icon: '↓',
+      title: 'ROAS abaixo de 1',
+      text: `Você gastou R$ ${fmtN(agg.invest.toFixed(0))} e faturou R$ ${fmtN(agg.fatTotal.toFixed(0))}. Antes de aumentar verba, revisar oferta e funil.`
+    });
+  }
+
+  // Reativação
+  if (agg.reativ > agg.ativacao * 0.3 && agg.ativacao > 50) {
+    insights.push({
+      type: 'warn',
+      icon: '↻',
+      title: 'Muita reativação',
+      text: `Reativação está em ${pct(agg.reativ / agg.ativacao * 100)} do volume de ativação. Isso indica que muitos leads estão escapando antes de fechar e precisando ser recuperados.`
+    });
+  }
+
+  if (!insights.length) {
+    insights.push({
+      type: '',
+      icon: '◇',
+      title: 'Tudo dentro do esperado',
+      text: 'Nenhum padrão crítico foi detectado nos dados desse período. Continue rodando e revisitando semanalmente.'
+    });
+  }
+
+  $('insightList').innerHTML = insights.map(i => `
+    <div class="insight ${i.type}">
+      <div class="insight-icon">${i.icon}</div>
+      <div>
+        <h4>${i.title}</h4>
+        <p>${i.text}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// RENDER — PROJEÇÕES
+// ============================================================
+function renderProjecoes() {
+  const rows = getFilteredRows();
+  const agg = aggregate(rows);
+  STATE.metaMes = parseFloat($('metaMes').value) || 23000;
+
+  // Dias decorridos no mês corrente (apenas modo month)
+  let diasDecorridos = 0, diasNoMes = 30, diasRestantes = 0;
+  if (STATE.view === 'month') {
+    const m = MONTHS.find(x => x.key === STATE.currentMonth);
+    diasNoMes = new Date(2026, m.num + 1, 0).getDate();
+    // dias com qualquer registro
+    const rowsComDado = rows.filter(r => r.ativacao || r.ofertas || r.fatTotal || r.invest || r.fechados);
+    diasDecorridos = rowsComDado.length || 1;
+    diasRestantes = Math.max(0, diasNoMes - diasDecorridos);
+  }
+
+  const ritmo = diasDecorridos > 0 ? agg.fatTotal / diasDecorridos : 0;
+  const projetadoReal = agg.fatTotal + ritmo * diasRestantes;
+  const projetadoOtim = agg.fatTotal + ritmo * 1.2 * diasRestantes;
+  const projetadoPess = agg.fatTotal + ritmo * 0.8 * diasRestantes;
+
+  // Estima fechados na mesma proporção
+  const ritmoFech = diasDecorridos > 0 ? agg.fechados / diasDecorridos : 0;
+  const fechProjReal = Math.round(agg.fechados + ritmoFech * diasRestantes);
+  const fechProjOtim = Math.round(agg.fechados + ritmoFech * 1.2 * diasRestantes);
+  const fechProjPess = Math.round(agg.fechados + ritmoFech * 0.8 * diasRestantes);
+
+  $('proj-real').textContent = fmt$short(agg.fatTotal);
+  $('proj-dias').textContent = `${diasDecorridos}/${diasNoMes}`;
+  $('proj-ritmo').textContent = fmt$short(ritmo);
+
+  // Meta progress
+  const pctMeta = Math.min(100, (agg.fatTotal / STATE.metaMes) * 100);
+  $('metaBar').style.width = pctMeta + '%';
+  $('metaText').textContent = pct(pctMeta);
+
+  // Cenários
+  $('scn-real-val').textContent = fmt$short(projetadoReal);
+  $('scn-otim-val').textContent = fmt$short(projetadoOtim);
+  $('scn-pess-val').textContent = fmt$short(projetadoPess);
+  $('scn-real-fech').textContent = fechProjReal;
+  $('scn-otim-fech').textContent = fechProjOtim;
+  $('scn-pess-fech').textContent = fechProjPess;
+  $('scn-real-gap').textContent = gap(projetadoReal, STATE.metaMes);
+  $('scn-otim-gap').textContent = gap(projetadoOtim, STATE.metaMes);
+  $('scn-pess-gap').textContent = gap(projetadoPess, STATE.metaMes);
+
+  renderProjectionChart(rows, ritmo, diasNoMes);
+}
+
+function gap(val, meta) {
+  const d = val - meta;
+  return (d >= 0 ? '+' : '') + fmt$short(d);
+}
+
+function renderProjectionChart(rows, ritmo, diasNoMes) {
+  destroyChart('chartProjection');
+  const labels = [], realData = [], projData = [];
+  let acc = 0;
+  for (let d = 1; d <= diasNoMes; d++) {
+    labels.push(String(d).padStart(2, '0'));
+    const dia = String(d).padStart(2, '0');
+    const row = rows.find(r => r.data.startsWith(dia));
+    if (row) {
+      acc += row.fatTotal;
+      realData.push(acc);
+      projData.push(null);
+    } else {
+      realData.push(null);
+      // continuar projetando a partir do último valor real
+      if (projData.length === 0 || projData[projData.length - 1] === null) {
+        projData.push(acc + ritmo);
+      } else {
+        projData.push(projData[projData.length - 1] + ritmo);
+      }
+    }
+  }
+  // Ajusta projData pra começar do último real
+  const lastRealIdx = realData.findIndex((v, i) => v !== null && (i === realData.length - 1 || realData[i+1] === null));
+  if (lastRealIdx >= 0) {
+    projData[lastRealIdx] = realData[lastRealIdx];
+  }
+
+  STATE.charts.chartProjection = new Chart($('chartProjection'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Real', data: realData, borderColor: COLORS.pink, backgroundColor: 'rgba(236,72,153,0.15)', fill: true, tension: 0.3, borderWidth: 3, pointRadius: 0, spanGaps: false },
+        { label: 'Projeção (ritmo atual)', data: projData, borderColor: COLORS.purple, borderDash: [6, 4], backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 0, spanGaps: false },
+        { label: 'Meta', data: labels.map(() => STATE.metaMes), borderColor: COLORS.green, borderDash: [3, 3], backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0 }
+      ]
+    },
+    options: chartOpts({ formatY: fmt$short })
+  });
+}
+
+// ============================================================
+// CHART HELPERS
+// ============================================================
+function chartOpts({ formatY } = {}) {
+  return {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: COLORS.text2, font: { family: 'Inter Tight', size: 12 }, usePointStyle: true, padding: 12 } },
+      tooltip: {
+        backgroundColor: '#11111c',
+        borderColor: COLORS.border,
+        borderWidth: 1,
+        titleColor: '#f5f4ff',
+        bodyColor: COLORS.text2,
+        padding: 10,
+        cornerRadius: 8
+      }
+    },
+    scales: {
+      x: { ticks: { color: COLORS.text3, font: { size: 11 } }, grid: { color: 'rgba(37,37,58,0.5)' } },
+      y: {
+        ticks: { color: COLORS.text3, font: { size: 11 }, callback: formatY || (v => v) },
+        grid: { color: 'rgba(37,37,58,0.5)' }
+      }
+    },
+    interaction: { intersect: false, mode: 'index' }
+  };
+}
+
+function destroyChart(id) {
+  if (STATE.charts[id]) { STATE.charts[id].destroy(); STATE.charts[id] = null; }
+}
+
+// ============================================================
+// CONTROLES
+// ============================================================
+function buildMonthSelector() {
+  const grp = $('monthGroup');
+  grp.innerHTML = MONTHS.map(m => `<button class="ctrl-btn" data-month="${m.key}">${m.label}</button>`).join('');
+  grp.querySelectorAll('.ctrl-btn').forEach(btn => {
+    btn.onclick = () => {
+      grp.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      STATE.currentMonth = btn.dataset.month;
+      STATE.view = 'month';
+      renderAll();
+    };
+  });
+  // Default: mês corrente
+  const now = new Date();
+  const cur = MONTHS[now.getMonth()] || MONTHS[3];
+  STATE.currentMonth = cur.key;
+  grp.querySelector(`[data-month="${cur.key}"]`).classList.add('active');
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      $('p-' + tab.dataset.tab).classList.add('active');
+
+      // Esconde controles na config
+      $('controls').style.display = tab.dataset.tab === 'config' ? 'none' : 'flex';
+    };
+  });
+}
+
+function setupViewToggle() {
+  document.querySelectorAll('.ctrl-group [data-view]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      STATE.view = btn.dataset.view;
+      $('customDates').style.display = STATE.view === 'custom' ? 'flex' : 'none';
+      $('monthGroup').style.opacity = STATE.view === 'custom' ? 0.5 : 1;
+      $('monthGroup').style.pointerEvents = STATE.view === 'custom' ? 'none' : 'auto';
+      if (STATE.view === 'custom') updateCustomRange();
+      renderAll();
+    };
+  });
+  ['dateFrom', 'dateTo'].forEach(id => {
+    $(id).onchange = () => {
+      updateCustomRange();
+      renderAll();
+    };
+  });
+  // default custom range = mês corrente
+  const now = new Date();
+  $('dateFrom').value = `2026-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  $('dateTo').value = `2026-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+
+function updateCustomRange() {
+  const from = $('dateFrom').value;
+  const to = $('dateTo').value;
+  if (from && to) {
+    STATE.customRange = { from: new Date(from), to: new Date(to) };
+  }
+}
+
+// ============================================================
+// CONFIG (sheetId, gid)
+// ============================================================
+function loadConfig() {
+  // Tenta carregar do hash da URL primeiro (compartilhamento), depois usa defaults
+  const hashParams = new URLSearchParams(location.hash.slice(1));
+  STATE.sheetId = hashParams.get('sid') || '1OsL6gmMgsTOCyw5s2H6iUruIqNa8cgWE';
+  STATE.reporteiGid = hashParams.get('gid') || null;
+  $('sheetIdInput').value = STATE.sheetId || '';
+  $('reporteiGidInput').value = STATE.reporteiGid || '';
+}
+
+function saveConfig() {
+  STATE.sheetId = $('sheetIdInput').value.trim();
+  STATE.reporteiGid = $('reporteiGidInput').value.trim() || null;
+  // Persiste na URL pra sobreviver a reload
+  const params = new URLSearchParams();
+  if (STATE.sheetId) params.set('sid', STATE.sheetId);
+  if (STATE.reporteiGid) params.set('gid', STATE.reporteiGid);
+  location.hash = params.toString();
+  toast('Configuração salva. Recarregando dados…', 'success');
+  loadSheetData().then(() => renderAll());
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll() {
+  try {
+    renderVisao();
+    renderDiario();
+    renderTrafego();
+    renderAnalises();
+    renderProjecoes();
+  } catch(e) { console.error(e); }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  loadConfig();
+  buildMonthSelector();
+  setupTabs();
+  setupViewToggle();
+  $('saveConfigBtn').onclick = saveConfig;
+  $('reloadBtn').onclick = () => { loadSheetData().then(() => renderAll()); };
+  $('metaMes').oninput = () => renderProjecoes();
+
+  if (STATE.sheetId) {
+    const ok = await loadSheetData();
+    if (ok) renderAll();
+  } else {
+    setSync('error', 'Configure a planilha');
+    document.querySelector('.tab[data-tab="config"]').click();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
